@@ -8,28 +8,35 @@ DELIM="|"
 TWEET_URL_PREFIX="=HYPERLINK(\"https://twitter.com/twitter/status/"
 TWEET_URL_SUFFIX='","Link")'
 DEBUG=0
+TWEETS_FILE="tweets.csv"
 
-def check_for_311_tweet(client,conversation_id):
+def check_for_311_tweet(client,conversation_id,original_tweet_id):
     query="from:311DCGov conversation_id:"+str(conversation_id)
-    search_convo = client.search_recent_tweets(query=query,tweet_fields=['created_at','author_id','referenced_tweets'], max_results=10)
+    search_convo = client.search_recent_tweets(query=query,tweet_fields=['created_at','author_id','referenced_tweets'], max_results=100)
     result=""
     if search_convo.data is None:
         result="No 311 Response"
     else:
-        try:
-            tweet_text_from_311=search_convo.data[0].text
-            result=re.search("(22-\d{8})",tweet_text_from_311)[0]
-        except:
-            result="No SR Included by 311"
+        result = get_service_request_from_311_tweet(search_convo.data,original_tweet_id)
+        if result is None:
+            result="No 311 Response"
     return result
+
+def get_service_request_from_311_tweet(tweets_from_311,original_tweet_id):
+    for tweet in tweets_from_311:
+        referenced_tweets = tweet.referenced_tweets
+        for reply_from_311 in referenced_tweets:
+            if ((reply_from_311.id == original_tweet_id) and (reply_from_311.type == "replied_to")):
+                try:
+                    result=re.search("(22-\d{8})",tweet.text)[0]
+                except:
+                    result="No SR Included by 311"
+                return result
 
 def utc_to_local(utc_dt):
     return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
 
 def get_tweets(client, query, start_time, end_time,max_results):
-    #query = 'from:MKeegan_5F07 @311DCgov -is:retweet'
-    #start_time='2022-10-05T23:36:00-04:00'
-    #end_time='2022-10-12T22:10:59-04:00'
     tweets = client.search_recent_tweets(query=query, start_time=start_time, end_time=end_time, 
                                         tweet_fields=['conversation_id', 'created_at','author_id'], 
                                         max_results=max_results)
@@ -37,12 +44,12 @@ def get_tweets(client, query, start_time, end_time,max_results):
 
 def get_search_params():
     query = '#sidewalkpalooza @311DCgov -is:retweet'
-    start_time='2022-10-12T23:36:00-04:00'
-    end_time='2022-10-13T23:35:59-04:00'
+    start_time='2022-10-13T00:00:00-04:00'
+    end_time='2022-10-13T23:59:59-04:00'
     return query, start_time, end_time
 
 def init_file(delim):
-    file=open("tweets.csv","w")
+    file=open(TWEETS_FILE,"w")
     line=f"Tweeted{delim}Tweet Text{delim}URL{delim}Username{delim}Name{delim}Service Request ID"
     if DEBUG:
         line += f"{delim}Tweet ID{delim}Conversation ID"
@@ -63,11 +70,8 @@ def main():
         tweet_text_without_line_break=tweet.text.replace("\n"," ")
         created_at=utc_to_local(tweet.created_at).strftime("%m/%d/%Y")
         name=user.data.name
-        if hasattr(tweet,'conversation_id'):
-            conversation_id=tweet.conversation_id
-            service_request=check_for_311_tweet(client,conversation_id)
-        else:
-            service_request="No 311 Response lol"
+        conversation_id=tweet.conversation_id
+        service_request=check_for_311_tweet(client,conversation_id,tweet.id)
         username="@"+user.data.username
         line=f"\n{created_at}{DELIM}{tweet_text_without_line_break}{DELIM}{tweet_url}{DELIM}{username}{DELIM}{name}{DELIM}{service_request}"
         #line=f"\n{created_at}{DELIM}{tweet_text_without_line_break}{DELIM}{tweet_url}{DELIM}{username}{DELIM}{name}{DELIM}{service_request}"
