@@ -1,9 +1,8 @@
 #Max search for tweets - 450 per 15 minute window
-
 import tweepy
 import re
-from datetime import datetime, timezone
-from twitter_auth import BEARER_TOKEN
+from datetime import datetime, timezone, timedelta
+from auth import BEARER_TOKEN
 DELIM="|"
 TWEET_URL_PREFIX="=HYPERLINK(\"https://twitter.com/twitter/status/"
 TWEET_URL_SUFFIX='","Link")'
@@ -41,8 +40,12 @@ def get_tweets(client,query,start_time, end_time,max_results):
 
 def get_search_params():
     query = '#sidewalkpalooza @311DCgov -is:retweet'
-    start_time='2022-10-15T00:00:00-04:00'
-    end_time='2022-10-15T23:59:59-04:00'
+    yesterday = (datetime.today().date() - timedelta(days=1)).strftime("%Y-%m-%d")
+    start_time=yesterday+"T00:00:00-04:00"
+    end_time=yesterday+"T23:59:59-04:00"
+    #start_time='2022-10-15T00:00:00-04:00'
+    #end_time='2022-10-15T23:59:59-04:00'
+    #2022-10-15T23:59:59-4:00]
     return query, start_time, end_time
 
 def init_file(delim):
@@ -58,13 +61,11 @@ def get_tweet_info(tweet,client):
     user = client.get_user(id=tweet.author_id)
     tweet_text_without_line_break=tweet.text.replace("\n"," ")
     created_at=utc_to_local(tweet.created_at).strftime("%m/%d/%Y")
-    name=user.data.name
-    conversation_id=tweet.conversation_id
-    service_request=check_for_311_tweet(client,conversation_id,tweet.id)
+    service_request=check_for_311_tweet(client,tweet.conversation_id,tweet.id)
     username="@"+user.data.username
-    line=f"\n{created_at}{DELIM}{tweet_text_without_line_break}{DELIM}{tweet_url}{DELIM}{username}{DELIM}{name}{DELIM}{service_request}"
+    line=f"\n{created_at}{DELIM}{tweet_text_without_line_break}{DELIM}{tweet_url}{DELIM}{username}{DELIM}{user.data.name}{DELIM}{service_request}"
     if DEBUG:
-        line += f"{DELIM}{tweet.id}{DELIM}{conversation_id}"
+        line += f"{DELIM}{tweet.id}{DELIM}{tweet.conversation_id}"
     return line
 
 def main():
