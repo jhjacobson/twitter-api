@@ -3,10 +3,11 @@ import tweepy
 import re
 from datetime import datetime, timezone, timedelta
 from auth import BEARER_TOKEN
+from dc_311_api import *
 DELIM="|"
 TWEET_URL_PREFIX="=HYPERLINK(\"https://twitter.com/twitter/status/"
 TWEET_URL_SUFFIX='","Link")'
-DEBUG=0
+DEBUG=1
 TWEETS_FILE="tweets.csv"
 
 def check_for_311_tweet(client,conversation_id,original_tweet_id):
@@ -38,19 +39,28 @@ def get_tweets(client,query,start_time, end_time,max_results):
                                         max_results=max_results)
     return tweets
 
+def is_sr(service_request_string):
+    if re.search("(22-\d{8})",service_request_string):
+        return 1
+    else:
+        return 0
+
 def get_search_params():
     query = '#sidewalkpalooza @311DCgov -is:retweet'
-    yesterday = (datetime.today().date() - timedelta(days=1)).strftime("%Y-%m-%d")
-    start_time=yesterday+"T00:00:00-04:00"
-    end_time=yesterday+"T23:59:59-04:00"
-    #start_time='2022-10-15T00:00:00-04:00'
-    #end_time='2022-10-15T23:59:59-04:00'
+    #query='from:AmberGove @311DCGov'
+    # yesterday = (datetime.today().date() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # start_time=yesterday+"T00:00:00-04:00"
+    # end_time=yesterday+"T23:59:59-04:00"
+    #Run for nikkidc4anc6A03 for 10/19
+    start_time='2022-10-18T00:00:00-04:00'
+    end_time='2022-10-18T23:59:59-04:00'
     #2022-10-15T23:59:59-4:00]
     return query, start_time, end_time
 
 def init_file(delim):
     file=open(TWEETS_FILE,"w")
     line=f"Tweeted{delim}Tweet Text{delim}URL{delim}Username{delim}Name{delim}Service Request ID"
+    line += get_sr_line_headers()
     if DEBUG:
         line += f"{delim}Tweet ID{delim}Conversation ID"
     file.write(line)
@@ -64,6 +74,10 @@ def get_tweet_info(tweet,client):
     service_request=check_for_311_tweet(client,tweet.conversation_id,tweet.id)
     username="@"+user.data.username
     line=f"\n{created_at}{DELIM}{tweet_text_without_line_break}{DELIM}{tweet_url}{DELIM}{username}{DELIM}{user.data.name}{DELIM}{service_request}"
+    if is_sr(service_request):
+        line += get_sr_datapoints(service_request)
+    else:
+        line += not_an_sr_datapoints()
     if DEBUG:
         line += f"{DELIM}{tweet.id}{DELIM}{tweet.conversation_id}"
     return line
