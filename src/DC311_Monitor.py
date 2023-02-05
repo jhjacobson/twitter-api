@@ -7,7 +7,7 @@ from dc_311_api import *
 DELIM="|"
 TWEET_URL_PREFIX="=HYPERLINK(\"https://twitter.com/twitter/status/"
 TWEET_URL_SUFFIX='","Link")'
-DEBUG=1
+DEBUG=0
 TWEETS_FILE="tweets.csv"
 
 def check_for_311_tweet(client,conversation_id,original_tweet_id):
@@ -47,13 +47,14 @@ def is_sr(service_request_string):
 
 def get_search_params():
     query = '#sidewalkpalooza @311DCgov -is:retweet'
-    #query='from:AmberGove @311DCGov'
-    # yesterday = (datetime.today().date() - timedelta(days=1)).strftime("%Y-%m-%d")
-    # start_time=yesterday+"T00:00:00-04:00"
-    # end_time=yesterday+"T23:59:59-04:00"
+    #query = 'from:JoshForANC @311DCgov -is:retweet'
+    #query='from:nikkidc4anc6A03 @311DCGov -is:retweet'
+    yesterday = (datetime.today().date() - timedelta(days=1)).strftime("%Y-%m-%d")
+    #start_time=yesterday+"T00:00:00-04:00"
+    #end_time=yesterday+"T23:59:59-04:00"
     #Run for nikkidc4anc6A03 for 10/19
-    start_time='2022-10-18T00:00:00-04:00'
-    end_time='2022-10-18T23:59:59-04:00'
+    start_time='2022-10-24T16:00:00-04:00'
+    end_time='2022-10-29T23:59:59-04:00'
     #2022-10-15T23:59:59-4:00]
     return query, start_time, end_time
 
@@ -81,6 +82,8 @@ def get_tweet_info(tweet,client):
     if DEBUG:
         line += f"{DELIM}{tweet.id}{DELIM}{tweet.conversation_id}"
     return line
+
+
 
 def main():
     max_results=10 if DEBUG else 100

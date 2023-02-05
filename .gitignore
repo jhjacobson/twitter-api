@@ -1,5 +1,5 @@
 twitter_auth.py
-auth.py
+src/auth.py
 __pycache__
 tweets.csv
 queries.txt

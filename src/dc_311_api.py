@@ -13,6 +13,9 @@ def get_sr_from_311(service_request_id):
     else:
         return resp.json()[0]
 
+def get_sr_comments_from_311(service_request_id):
+    return 1
+
 def get_sr_line_headers():
     return f"{DELIM}SR Status{DELIM}Latitude{DELIM}Longitude{DELIM}Service Name{DELIM}SR Last Update Date"
 
@@ -34,4 +37,5 @@ def get_sr_datapoints(service_request_id):
         sr_datapoints_line = f"{DELIM}{status}{DELIM}{lat}{DELIM}{long}{DELIM}{service_name}{DELIM}{last_update_formatted}"
         return sr_datapoints_line
 
-#get_sr_from_311('22-00501533')
+get_sr_from_311('22-00528382')
+#6fbc647e8ff857d5a2ef40f2a033a224cb14c2a287b28436caf4bfd0403dc0fa
